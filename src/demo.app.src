@@ -1,0 +1,14 @@
+{application, demo,
+ [
+  {description, "Erlang demo"},
+  {vsn, git},
+  {modules, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  cowlib,
+                  cowboy
+                 ]},
+  {mod, {demo_app, []}},
+  {env, []}
+ ]}.
