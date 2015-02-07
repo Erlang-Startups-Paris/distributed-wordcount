@@ -25,7 +25,8 @@ start(_StartType, _StartArgs) ->
     Dispatch = cowboy_router: compile ([
                                         %% {URIHost, list({URIPath, Handler, Opts})}
                                         {'_', [
-                                               {"/demo", cowboy_demo, []}
+                                               {"/demo", cowboy_echo, []},
+                                               {"/fact", cowboy_fact, []}
                                               ]}
                                        ]),
  

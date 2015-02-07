@@ -1,4 +1,4 @@
--module(cowboy_demo).
+-module(cowboy_echo).
 
 -export([init/3]).
 -export([handle/2]).
