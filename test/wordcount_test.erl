@@ -15,5 +15,5 @@ count_word_in_several_string () ->
     E = [{"goodbye", 1},
          {"hello", 3},
          {"world", 2}],
-    E = lists: sort (dict: to_list (wordcount: lines (Lines))).
+    E = lists: sort (dict: to_list (wordcount: lines_p (Lines))).
     
