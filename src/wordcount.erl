@@ -21,7 +21,7 @@ lines_p (Lines, NbProcess) ->
                                        Parent ! lines (BucketOfLines)
                                end)
                 end, Splitted),
-    collect_result (length (Lines), dict: new ()).
+    collect_result (NbProcess, dict: new ()).
 
 collect_result (0, Dict)->
     Dict;
@@ -52,7 +52,10 @@ count ([FirstWord|Other], Dict) ->
 %%
 
 count_file (Name, From, To) ->
+    io: format ("Reading file ~p from ~p to ~p~n", [Name, From, To]),
     L = read_file (Name, From, To),
+    io: format ("Finished.~n"),
+    io: format ("Counting...~n"),
     lines_p (L).
 
 
