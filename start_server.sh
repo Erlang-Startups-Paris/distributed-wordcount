@@ -1,4 +1,4 @@
 #!/bin/bash
 
-erl -pa ebin -pa deps/*/ebin -s wc_server -sname server -setcookie demo_app
+erl -pa ebin -pa deps/*/ebin  -sname server -setcookie demo_app
 

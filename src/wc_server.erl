@@ -1,26 +1,38 @@
 -module (wc_server).
 
--export ([start/0]).
--export ([clients/0]).
+-export ([hard_coded_clients/0]).
 -export ([count/3]).
--export ([quit/0]).
+-export ([count/4]).
+-export ([quit/1]).
+-export ([test/0]).
+-export ([register/0]).
 
--define (WORDCOUNT_LISTENER, wordcount_listener).    
+-define (WORDCOUNT_SERVER, wordcount_server).    
+-define (WORDCOUNT_LISTENER, wordcount_listener).
 
-start () ->
-    register (?WORDCOUNT_LISTENER, self ()),
+test () ->
+    Clients = read_file: all ("clients.txt"),
+    count ("gros.txt", 1, 200, Clients).
+
+register () ->
+    true = register (?WORDCOUNT_SERVER, self ()),
+    io: format ("server registered~n"),    
     ok.
 
-clients () ->
-    ['client@bernard-VirtualBox'].
+hard_coded_clients () ->
+    ["client@bernard-VirtualBox"].
 
-quit () ->
-    [ {?WORDCOUNT_LISTENER, Node} ! quit || Node <- clients ()].
+quit (Clients) ->
+    [ {?WORDCOUNT_LISTENER, Node} ! quit || Node <- Clients ].
 
 count (FileName, From, To) ->
-    Sender = {?WORDCOUNT_LISTENER, node ()},
-    [ {?WORDCOUNT_LISTENER, Node} ! {wc, Sender, FileName, From, To} || Node <- clients ()],
-    listen_for_responses (length (clients ()), dict: new ()).
+    count (FileName, From, To, hard_coded_clients ()).
+
+count (FileName, From, To, Clients) ->
+    Sender = {?WORDCOUNT_SERVER, node ()},
+    Nodes = [ list_to_atom (S) || S <- Clients ],
+    [ {?WORDCOUNT_LISTENER, Node} ! {wc, Sender, FileName, From, To} || Node <- Nodes],
+    listen_for_responses (length (Clients), dict: new ()).
 
 listen_for_responses (0, Responses) ->
     Responses;

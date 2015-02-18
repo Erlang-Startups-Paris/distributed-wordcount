@@ -53,35 +53,10 @@ count ([FirstWord|Other], Dict) ->
 
 count_file (Name, From, To) ->
     io: format ("Reading file ~p from ~p to ~p~n", [Name, From, To]),
-    L = read_file (Name, From, To),
+    L = read_file: from_to (Name, From, To),
     io: format ("Finished.~n"),
     io: format ("Counting...~n"),
     lines_p (L).
-
-
-read_file (Name, From, To) ->
-    {ok, Device} = file: open (Name, read),
-    skip_first_lines  (Device, From-1),
-    for_each_line (Device, From, To, []).
-
-skip_first_lines (_, 0) -> 
-    ok;
-skip_first_lines (Device, N) ->
-    io: get_line (Device, ""),
-    skip_first_lines (Device, N-1).
-
-for_each_line (Device, From, To, Accum) when From > To->
-    close (Device, Accum);
-for_each_line (Device, From, To, Accum) ->
-    case io: get_line (Device, "") of
-        eof  -> close (Device, Accum);
-        Line -> for_each_line (Device, From+1, To, [Line|Accum])
-    end.
-
-close (Device, Accum) ->
-    file: close (Device), Accum.
-
-
 
 %%
 
