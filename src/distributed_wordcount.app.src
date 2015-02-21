@@ -1,0 +1,15 @@
+{application, distributed_wordcount,
+ [
+  {description, "An Erlang distributed-wordcount library"},
+  {vsn, "1"},
+  {modules, [
+             wc_server,
+             wc_client
+            ]},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {env, []}
+ ]}.
