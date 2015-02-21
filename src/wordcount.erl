@@ -53,10 +53,13 @@ count ([FirstWord|Other], Dict) ->
 
 count_file (Name, From, To) ->
     io: format ("Reading file ~p from ~p to ~p~n", [Name, From, To]),
-    L = read_file: from_to (Name, From, To),
+    {TimeReadingFile, L} = timer: tc (fun ()-> read_file: from_to (Name, From, To) end),
     io: format ("Finished.~n"),
     io: format ("Counting...~n"),
-    lines_p (L).
+    {TimeCounting, Dict} = timer: tc (fun ()-> lines_p (L) end),
+    io: format ("Finished. Reading file: ~p secs, counting word: ~p secs~n",
+                [TimeReadingFile, TimeCounting]),
+    {Dict, TimeReadingFile/1000000, TimeCounting/1000000}.
 
 %%
 

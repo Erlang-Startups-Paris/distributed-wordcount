@@ -15,7 +15,7 @@ listen_for_request () ->
                         [Sender, FileName, From, To]),
             Response = wordcount: count_file (FileName, From, To),
             io: format ("Sending back response to ~p~n", [Sender]),
-            Sender ! {response, Response},
+            Sender ! {response, node(), Response},
             listen_for_request ();
         quit -> 
             io: format ("quit~n"),

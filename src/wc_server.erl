@@ -32,17 +32,18 @@ count (FileName, From, To, Clients) ->
     Sender = {?WORDCOUNT_SERVER, node ()},
     Nodes = [ list_to_atom (S) || S <- Clients ],
     [ {?WORDCOUNT_LISTENER, Node} ! {wc, Sender, FileName, From, To} || Node <- Nodes],
-    listen_for_responses (length (Clients), dict: new ()).
+    {_WordCount, Timing} = listen_for_responses (length (Clients), {dict: new (), []}),
+    Timing.
 
 listen_for_responses (0, Responses) ->
     Responses;
-listen_for_responses (N, Responses) ->
+listen_for_responses (N, {WordCounts, Times}) ->
     io: format ("Waiting for a response~n"),    
     receive 
-        {response, Dict} ->
-            io: format ("Received response~n"),
-            Merged = dict: merge (fun(_,V1,V2) -> V1+V2 end, Responses, Dict),
-            listen_for_responses (N-1, Merged);
+        {response, Node, {Dict, TimeReadingFile, TimeCounting}} ->
+            io: format ("Received response from node ~p~n", [Node]),
+            Merged = dict: merge (fun(_,V1,V2) -> V1+V2 end, WordCounts, Dict),
+            listen_for_responses (N-1, {Merged, [{Node, TimeReadingFile, TimeCounting}|Times]});
         Other ->
             io: format ("Unexpected response ~p~n",[Other]),
             error
