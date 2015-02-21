@@ -21,5 +21,5 @@ count_word_in_several_string () ->
 split_list () ->    
     [[c,d],[a,b]] = wordcount: split_list ([a,b,c,d], 2),
     [[c,d,e],[a,b]] = wordcount: split_list ([a,b,c,d,e], 2),
-
+    [[c],[b],[a]] = wordcount: split_list ([a,b,c], 32),
     ok.

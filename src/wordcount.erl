@@ -21,7 +21,7 @@ lines_p (Lines, NbProcess) ->
                                        Parent ! lines (BucketOfLines)
                                end)
                 end, Splitted),
-    collect_result (NbProcess, dict: new ()).
+    collect_result (length (Splitted), dict: new ()).
 
 collect_result (0, Dict)->
     Dict;
