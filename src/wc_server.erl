@@ -33,6 +33,7 @@ count (FileName, From, To, Clients) ->
     Nodes = [ list_to_atom (S) || S <- Clients ],
     [ {?WORDCOUNT_LISTENER, Node} ! {wc, Sender, FileName, From, To} || Node <- Nodes],
     {_WordCount, Timing} = listen_for_responses (length (Clients), {dict: new (), []}),
+    report: print_timing (Timing),
     Timing.
 
 listen_for_responses (0, Responses) ->

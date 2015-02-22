@@ -58,8 +58,8 @@ count_file (Name, From, To) ->
     io: format ("Counting...~n"),
     {TimeCounting, Dict} = timer: tc (fun ()-> lines_p (L) end),
     io: format ("Finished. Reading file: ~p secs, counting word: ~p secs~n",
-                [TimeReadingFile, TimeCounting]),
-    {Dict, TimeReadingFile/1000000, TimeCounting/1000000}.
+                [TimeReadingFile/1000000, TimeCounting/1000000]),
+    {Dict, TimeReadingFile, TimeCounting}.
 
 %%
 
