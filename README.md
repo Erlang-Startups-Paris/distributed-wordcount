@@ -7,8 +7,13 @@ The computation used in this example is counting the number of occurrences of ea
 
 Checkout latest version of the code and make sure you have compiled the code using :
 ```
+git clone https://github.com/Erlang-Startups-Paris/distributed-wordcount
+rebar g-d
 rebar co
+echo "client@localhost" > clients.txt
 ```
+Create a big file called gros.txt
+
 Simple Test with one client and a server
 ----------------------------------------
 Open two shells, one client and another server and launch the following commands
