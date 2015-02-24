@@ -1,7 +1,18 @@
 -module (report).
 -export ([print/1]).
+-export ([print_info/1]).
 -export ([reset/0]).
 -export ([print_timing/1]).
+
+print_info([]) ->
+    ok;
+print_info([{"nodes_infos", Details}|List]) ->
+    print_timing (Details),
+    print_info(List);
+print_info([{Title, Details}|List]) ->
+    io:fwrite("~n--- ~s --- ~n",[Title]),
+    io:fwrite("~p~n",[Details]),
+    print_info(List).    
 
 print_timing (Results) ->
     io: format ("Node                       Reading File  Counting words~n"),
