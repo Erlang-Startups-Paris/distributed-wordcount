@@ -27,7 +27,7 @@ Test with multiple clients and a server
 ----------------------------------------
 Open three shells, two clients and one server. (This can be done on any number of nodes)
 
-Update the file clients.txt with the clients names
+On the server node, update the file clients.txt with the clients names
 ```
 client1@host1
 client2@host2
