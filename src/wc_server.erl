@@ -1,43 +1,89 @@
 -module (wc_server).
 
--export ([hard_coded_clients/0]).
+-include_lib("eunit/include/eunit.hrl").
+
+-export ([count/0]).
+-export ([count/1]).
+-export ([count/2]).
 -export ([count/3]).
 -export ([count/4]).
+-export ([portion/3]).
+-export ([hard_coded_clients/0]).
 -export ([quit/1]).
--export ([test/0]).
 -export ([register/0]).
 
 -define (WORDCOUNT_SERVER, wordcount_server).    
 -define (WORDCOUNT_LISTENER, wordcount_listener).
+-define (DEFAULT_LINES_NB, 3).
 
-test () ->
-    Clients = read_file: all ("clients.txt"),
-    count ("gros.txt", 1, 200, Clients).
+%% To start Server and launch computations :
+%% ./start_server.sh 
+%% wc_server:register(), wc_server:count(10).
 
 register () ->
     true = register (?WORDCOUNT_SERVER, self ()),
     io: format ("server registered~n"),    
     ok.
 
-hard_coded_clients () ->
-    ["client@bernard-VirtualBox"].
-
 quit (Clients) ->
     [ {?WORDCOUNT_LISTENER, Node} ! quit || Node <- Clients ].
 
-count (FileName, From, To) ->
-    count (FileName, From, To, hard_coded_clients ()).
+count () ->
+    count (?DEFAULT_LINES_NB).
 
-count (FileName, From, To, Clients) ->
-    Start_time = erlang:now(),
+count (Number_lines) ->
+    count (1, Number_lines).
+
+count (First_line, Last_line) ->
+    count ("gros.txt", First_line, Last_line).
+
+count (FileName, From, To) ->
+    Clients = case read_file: all ("clients.txt") of
+		  [] ->
+		      hard_coded_clients ();
+		  Defined_clients ->
+		      Defined_clients
+	      end,
+    count (FileName, From, To, Clients).
+
+count (FileName, First_line, Last_line, Clients) ->
+    {Portion, Active_clients} = portion (First_line, Last_line, Clients),
+    case Active_clients of
+	[] ->
+	    report: print_info ([{"Wrong number of lines", Last_line - First_line}]);
+	_ ->	    
+	    Start_time = erlang:now(),
+	    send_portions_to_clients (FileName, First_line, Portion, Last_line, Active_clients),
+	    {_WordCount, Timing} = listen_for_responses (length (Active_clients), {dict: new (), []}),
+	    Total_time = timer:now_diff (erlang:now(), Start_time),
+	    report(FileName, First_line, Last_line, Active_clients, Timing, Total_time)
+    end.
+
+hard_coded_clients () ->
+    ["client@bernard-VirtualBox"].
+
+portion(First_line, Last_line, _) when Last_line < First_line ->
+    {0, []};
+portion(First_line, Last_line, Clients) ->
+    Nb_lines = Last_line - First_line + 1,
+    Nb_clients = length(Clients),
+    if Nb_lines =< Nb_clients ->
+	    {Active_clients, _} = lists:split(Nb_lines, Clients),
+	    {1, Active_clients};
+       true ->
+	    {(Last_line - First_line + 1) div length(Clients), Clients} 
+    end.
+
+send_portions_to_clients(FileName, First_line_node, Portion, Last_line, [Client|Clients]) ->
+    Last_line_node = First_line_node + Portion,
+    send_portion_to_client(FileName, First_line_node, Last_line_node, Client),
+    send_portions_to_clients(FileName, Last_line_node, Portion, Last_line, Clients);    
+send_portions_to_clients(FileName, First_line_node, _, Last_line, Client) ->
+    send_portion_to_client(FileName, First_line_node, Last_line, Client).
+
+send_portion_to_client(FileName, First_line_node, Last_line_node, Client) ->
     Sender = {?WORDCOUNT_SERVER, node ()},
-    Nodes = [ list_to_atom (S) || S <- Clients ],
-    [ {?WORDCOUNT_LISTENER, Node} ! {wc, Sender, FileName, From, To} || Node <- Nodes],
-    {_WordCount, Timing} = listen_for_responses (length (Clients), {dict: new (), []}),
-    Total_time = timer:now_diff(erlang:now(), Start_time),
-    report: print_info ([{"number of lines treated", To-From},
-			 {"total exec time in sec", Total_time/1000000}, 
-			 {"nodes_infos", Timing}]).
+    {?WORDCOUNT_LISTENER, list_to_atom(Client)} ! {wc, Sender, FileName, First_line_node, Last_line_node}.
 
 listen_for_responses (0, Responses) ->
     Responses;
@@ -53,4 +99,9 @@ listen_for_responses (N, {WordCounts, Times}) ->
             error
     end.
 
-
+report(FileName, First_line, Last_line, Clients, Timing, Total_time) ->
+    report: print_info ([{"Word count of file", FileName},
+			 {"launched on clients: ", Clients},
+			 {"number of lines treated", Last_line - First_line + 1},
+			 {"total exec time in sec", Total_time/1000000}, 
+			 {"nodes_infos", Timing}]).
