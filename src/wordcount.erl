@@ -15,10 +15,11 @@ lines_p (Lines) ->
 
 lines_p (Lines, NbProcess) ->
     Parent = self(),
-    Splitted = split_list (Lines, NbProcess),
+    Splitted = t (split_list, fun() -> split_list (Lines, NbProcess) end),
     lists: map (fun(BucketOfLines) ->
                         spawn (fun () ->
-                                       Parent ! lines (BucketOfLines)
+                                       Result = t (count_lines, fun () -> lines (BucketOfLines) end),
+                                       Parent ! Result
                                end)
                 end, Splitted),
     collect_result (length (Splitted), dict: new ()).
@@ -28,7 +29,7 @@ collect_result (0, Dict)->
 collect_result (N, Dict) ->
     receive
         Result ->
-            Merged = dict: merge (fun(_,V1,V2) -> V1+V2 end, Dict, Result),
+            Merged = t (collect_result, fun () -> dict: merge (fun(_,V1,V2) -> V1+V2 end, Dict, Result) end),
             collect_result (N-1, Merged)
     end.
 
@@ -52,14 +53,9 @@ count ([FirstWord|Other], Dict) ->
 %%
 
 count_file (Name, From, To) ->
-    io: format ("Reading file ~p from ~p to ~p~n", [Name, From, To]),
-    {TimeReadingFile, L} = timer: tc (fun ()-> read_file: from_to (Name, From, To) end),
-    io: format ("Finished.~n"),
-    io: format ("Counting...~n"),
-    {TimeCounting, Dict} = timer: tc (fun ()-> lines_p (L) end),
-    io: format ("Finished. Reading file: ~p secs, counting word: ~p secs~n",
-                [TimeReadingFile/1000000, TimeCounting/1000000]),
-    {Dict, TimeReadingFile, TimeCounting}.
+    L = t (read_file, fun ()-> read_file: from_to (Name, From, To) end),
+    Dict = t (counting_all, fun ()-> lines_p (L) end),
+    Dict.
 
 %%
 
@@ -83,4 +79,11 @@ floor(X) ->
         Pos when Pos > 0 -> T;
         _ -> T
     end.
+
+t (Id, Fun) ->
+    Self = self (),
+    io: format ("~p: start ~p~n", [Self, Id]),
+    Result = log_server: time (Id, Fun),
+    io: format ("~p: finished ~p~n", [Self, Id]),
+    Result.
 
