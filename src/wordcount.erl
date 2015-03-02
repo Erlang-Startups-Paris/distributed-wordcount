@@ -1,8 +1,6 @@
 -module (wordcount).
 -export ([lines/1]).
 -export ([lines_p/1]).
--export ([count_file/3]).
--export ([split_list/2]).
 
 %% simple algo
 
@@ -35,7 +33,7 @@ lines_p (Lines) ->
 
 lines_p (Lines, NbProcess) ->
     Parent = self(),
-    Splitted = t (split_list, fun() -> split_list (Lines, NbProcess) end),
+    Splitted = t (split_list, fun() -> chunk: list (Lines, NbProcess) end),
     lists: map (fun(BucketOfLines) ->
                         spawn (fun () ->
                                        Result = t (count_lines, fun () -> lines (BucketOfLines) end),
@@ -54,38 +52,6 @@ collect_result (N, Dict) ->
     end.
 
                           
-
-%% helper to split lines over several processes
-
-split_list (List, N) ->
-    BucketSize = max (floor (length (List) / N), 1),
-    buckets (List, N-1, BucketSize, []).
-
-buckets ([], _, _, Acc) ->
-    Acc;
-buckets (List, 0, _, Acc) ->
-    [List|Acc];
-buckets (List, N, BucketSize, Acc) ->
-    {Bucket, Remaining} = lists: split (BucketSize, List),
-    buckets (Remaining, N-1, BucketSize, [Bucket|Acc]).
-
-floor(X) ->
-    T = erlang: trunc(X),
-    case (X - T) of
-        Neg when Neg < 0 -> T - 1;
-        Pos when Pos > 0 -> T;
-        _ -> T
-    end.
-
-
-%% read lines from a text file
-
-count_file (Name, From, To) ->
-    L = t (read_file, fun ()-> read_file: from_to (Name, From, To) end),
-    Dict = t (counting_all, fun ()-> lines_p (L) end),
-    Dict.
-
-
 %% log time measures
 
 t (Id, Fun) ->

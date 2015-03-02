@@ -15,7 +15,7 @@ listen_for_request () ->
         {wc, Sender, FileName, From, To} ->
             io: format ("Received request from ~p: file ~p from ~p to ~p~n",
                         [Sender, FileName, From, To]),
-            Wordcount = wordcount: count_file (FileName, From, To),
+            Wordcount = count_file (FileName, From, To),
             io: format ("Sending back response to ~p~n", [Sender]),
             Timing = log_server: list (),
             Sender ! {response, node (), Wordcount, Timing},
@@ -25,3 +25,9 @@ listen_for_request () ->
             ok
     end.
                              
+%% read lines from a text file
+
+count_file (Name, From, To) ->
+    L = log_server: time (read_file, fun ()-> read_file: from_to (Name, From, To) end),
+    Dict = log_server: time (counting_all, fun ()-> wordcount: lines_p (L) end),
+    Dict.

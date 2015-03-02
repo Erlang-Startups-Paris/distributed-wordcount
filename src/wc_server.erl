@@ -7,7 +7,6 @@
 -export ([count/2]).
 -export ([count/3]).
 -export ([count/4]).
--export ([portion/3]).
 -export ([quit/1]).
 -export ([register/0]).
 
@@ -32,47 +31,36 @@ count () ->
 count (Number_lines) ->
     count (1, Number_lines).
 
-count (First_line, Last_line) ->
-    count ("gros.txt", First_line, Last_line).
+count (FirstLine, LastLine) ->
+    count ("gros.txt", FirstLine, LastLine).
 
-count (File_name, First_line, Last_line) ->
+count (File_name, FirstLine, LastLine) ->
     Clients = read_file: all ("clients.txt"),
-    count (File_name, First_line, Last_line, Clients).
+    count (File_name, FirstLine, LastLine, Clients).
 
-count (File_name, First_line, Last_line, Clients) ->
-    {Portion, Active_clients} = portion (First_line, Last_line, Clients),
-    case Active_clients of
-	[] ->
-	    report: print_info ([{"Wrong number of lines", Last_line - First_line}]);
+count (File_name, FirstLine, LastLine, Clients) ->
+    {Portion, ActiveClients} = chunk: portion (FirstLine, LastLine, Clients),
+    case ActiveClients of
+	[] -> {error, wrong_number_of_lines};
 	_ ->	    
-            send_portions_to_clients (File_name, First_line, Portion, Last_line, Active_clients),
-            {_Result, Timing} = listen_for_responses (length (Active_clients), {dict: new (), []}),
-            report(File_name, First_line, Last_line, Clients, Timing)
+            send_portions_to_clients (File_name, FirstLine, Portion, LastLine, ActiveClients),
+            {_Result, Timing} = listen_for_responses (length (ActiveClients), {dict: new (), []}),
+            report: counting (File_name, FirstLine, LastLine, Clients, Timing)
     end.
 
 
-portion(First_line, Last_line, _) when Last_line < First_line ->
-    {0, []};
-portion(First_line, Last_line, Clients) ->
-    Nb_lines = Last_line - First_line + 1,
-    Nb_clients = length(Clients),
-    if Nb_lines =< Nb_clients ->
-	    {Active_clients, _} = lists:split(Nb_lines, Clients),
-	    {1, Active_clients};
-       true ->
-	    {(Last_line - First_line + 1) div length(Clients), Clients} 
-    end.
+send_portions_to_clients (FileName, FirstLineNode, Portion, LastLine, [Client|Clients]) ->
+    LastLineNode = FirstLineNode + Portion,
+    send_portion_to_client (FileName, FirstLineNode, LastLineNode, Client),
+    send_portions_to_clients (FileName, LastLineNode, Portion, LastLine, Clients);    
+send_portions_to_clients (FileName, FirstLineNode, _, LastLine, Client) ->
+    send_portion_to_client (FileName, FirstLineNode, LastLine, Client).
 
-send_portions_to_clients(File_name, First_line_node, Portion, Last_line, [Client|Clients]) ->
-    Last_line_node = First_line_node + Portion,
-    send_portion_to_client(File_name, First_line_node, Last_line_node, Client),
-    send_portions_to_clients(File_name, Last_line_node, Portion, Last_line, Clients);    
-send_portions_to_clients(File_name, First_line_node, _, Last_line, Client) ->
-    send_portion_to_client(File_name, First_line_node, Last_line, Client).
-
-send_portion_to_client(File_name, First_line_node, Last_line_node, Client) ->
+send_portion_to_client (FileName, FirstLineNode, LastLineNode, Client) ->
     Sender = {?WORDCOUNT_SERVER, node ()},
-    {?WORDCOUNT_LISTENER, list_to_atom(Client)} ! {wc, Sender, File_name, First_line_node, Last_line_node}.
+    {?WORDCOUNT_LISTENER, list_to_atom(Client)} ! {wc, Sender, FileName, FirstLineNode, LastLineNode}.
+
+
 
 listen_for_responses (0, Responses) ->
     Responses;
@@ -87,11 +75,5 @@ listen_for_responses (N, {WordCounts, Times}) ->
             io: format ("Unexpected response ~p~n",[Other]),
             error
     end.
-
-report(File_name, First_line, Last_line, Clients, Timing) ->
-    report: print_info ([{"Word count of file:", File_name},
-			 {"Launched on clients:", Clients},
-			 {"Number of lines treated:", Last_line - First_line + 1}]),
-    report: print_timing_nodes (Timing).
 
 

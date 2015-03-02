@@ -1,8 +1,18 @@
 -module (report).
+
+-export ([counting/5]).
 -export ([print/1]).
 -export ([print_info/1]).
 -export ([reset/0]).
 -export ([print_timing_nodes/1]).
+
+
+
+counting (File_name, First_line, Last_line, Clients, Timing) ->
+    report: print_info ([{"Word count of file:", File_name},
+			 {"Launched on clients:", Clients},
+			 {"Number of lines treated:", Last_line - First_line + 1}]),
+    report: print_timing_nodes (Timing).
 
 
 banner () ->
