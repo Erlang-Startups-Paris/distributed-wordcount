@@ -14,7 +14,9 @@ banner () ->
     
 print_info(List) ->
     banner (),
-    print_info_list (List).
+    print_info_list (List),
+    io: format ("~n"),
+    ok.
 
 print_info_list ([]) ->
     ok;
@@ -28,14 +30,16 @@ print_timing_nodes (Nodes) ->
 
 print_node ({Node, Times}) ->
     bold(),
-    io: format ("~nNode ~p~n", [Node]),
+    io: format ("Node ~p~n", [Node]),
     reset (),
     underscore (),
     io: format ("~15s ~10s~n", ["Description", "Secs"]),
     reset (),
 
     Keys = proplists: get_keys (Times),
-    [print_timing_key (K, Times) || K <- Keys].
+    [print_timing_key (K, Times) || K <- Keys],
+    
+    io: format ("~n").
 
 print_timing_key (Key, Times) ->
     NanoSecs  = lists: sum (proplists: get_all_values (Key, Times)),

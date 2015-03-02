@@ -4,11 +4,31 @@
 -export ([count_file/3]).
 -export ([split_list/2]).
 
+%% simple algo
+
 lines (Lines) ->
     D = dict: new (),
     lists: foldl (fun (Line, Acc) ->
                           string (Line, Acc)
                   end, D, Lines).
+
+string (String, Dict) ->
+    Words = string: tokens (String, " ;,.:()"),
+    count (Words, Dict).
+    
+count ([], Dict) ->
+    Dict;
+count ([FirstWord|Other], Dict) ->
+    Updated = case dict: find (FirstWord, Dict) of
+                  {ok, N} ->
+                      dict: store (FirstWord, N+1, Dict);
+                  error ->
+                      dict: store (FirstWord, 1, Dict)
+              end,
+    count (Other, Updated).
+            
+
+%% parallel version
 
 lines_p (Lines) ->
     lines_p (Lines, 32).
@@ -34,30 +54,8 @@ collect_result (N, Dict) ->
     end.
 
                           
-string (String, Dict) ->
-    Words = string: tokens (String, " ;,.:()"),
-    count (Words, Dict).
-    
-count ([], Dict) ->
-    Dict;
-count ([FirstWord|Other], Dict) ->
-    Updated = case dict: find (FirstWord, Dict) of
-                  {ok, N} ->
-                      dict: store (FirstWord, N+1, Dict);
-                  error ->
-                      dict: store (FirstWord, 1, Dict)
-              end,
-    count (Other, Updated).
-            
 
-%%
-
-count_file (Name, From, To) ->
-    L = t (read_file, fun ()-> read_file: from_to (Name, From, To) end),
-    Dict = t (counting_all, fun ()-> lines_p (L) end),
-    Dict.
-
-%%
+%% helper to split lines over several processes
 
 split_list (List, N) ->
     BucketSize = max (floor (length (List) / N), 1),
@@ -71,7 +69,6 @@ buckets (List, N, BucketSize, Acc) ->
     {Bucket, Remaining} = lists: split (BucketSize, List),
     buckets (Remaining, N-1, BucketSize, [Bucket|Acc]).
 
-
 floor(X) ->
     T = erlang: trunc(X),
     case (X - T) of
@@ -79,6 +76,17 @@ floor(X) ->
         Pos when Pos > 0 -> T;
         _ -> T
     end.
+
+
+%% read lines from a text file
+
+count_file (Name, From, To) ->
+    L = t (read_file, fun ()-> read_file: from_to (Name, From, To) end),
+    Dict = t (counting_all, fun ()-> lines_p (L) end),
+    Dict.
+
+
+%% log time measures
 
 t (Id, Fun) ->
     Self = self (),
