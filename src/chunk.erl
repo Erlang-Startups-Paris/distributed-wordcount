@@ -1,8 +1,19 @@
 -module (chunk).
 -export ([portion/3]).
 -export ([list/2]).
+-export ([ranges/3]).
 
+%%
+%% @doc Split a range of integer into several ranges
+%%
+ranges (Start, End, 1) ->
+    [{Start, End}];
+ranges (Start, End, N) when N > 1 ->
+    Size = (End-Start+1) div N,
+    R = [{Start + X*Size, Start + (X+1)*Size -1} || X <- lists: seq (0, N-2)],
+    R ++ [{Start + (N-1)*Size, End}].
 
+         
 %%
 %% @doc ???
 %%
@@ -19,11 +30,16 @@ portion (FirstLine, LastLine, Clients) ->
     end.
 
 %%
-%% @doc Split a list in several part of about the same size
+%% @doc Split a list in several buckets of about the same size
 %%
 list (List, N) ->
     BucketSize = max (floor (length (List) / N), 1),
     buckets (List, N-1, BucketSize, []).
+
+%%
+%% @doc
+%% @internal
+%% 
 
 buckets ([], _, _, Acc) ->
     Acc;
@@ -40,3 +56,4 @@ floor(X) ->
         Pos when Pos > 0 -> T;
         _ -> T
     end.
+

@@ -51,13 +51,9 @@ collect_result (N, Dict) ->
             collect_result (N-1, Merged)
     end.
 
-                          
+
 %% log time measures
 
 t (Id, Fun) ->
-    Self = self (),
-    io: format ("~p: start ~p~n", [Self, Id]),
-    Result = log_server: time (Id, Fun),
-    io: format ("~p: finished ~p~n", [Self, Id]),
-    Result.
+    log_server: time (Id, Fun).
 

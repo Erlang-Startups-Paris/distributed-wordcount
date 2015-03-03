@@ -34,34 +34,23 @@ count (Number_lines) ->
 count (FirstLine, LastLine) ->
     count ("gros.txt", FirstLine, LastLine).
 
-count (File_name, FirstLine, LastLine) ->
+count (FileName, FirstLine, LastLine) ->
     Clients = read_file: all ("clients.txt"),
-    count (File_name, FirstLine, LastLine, Clients).
+    count (FileName, FirstLine, LastLine, Clients).
 
-count (File_name, FirstLine, LastLine, Clients) ->
-    {Portion, ActiveClients} = chunk: portion (FirstLine, LastLine, Clients),
-    case ActiveClients of
-	[] -> {error, wrong_number_of_lines};
-	_ ->	    
-            send_portions_to_clients (File_name, FirstLine, Portion, LastLine, ActiveClients),
-            {_Result, Timing} = listen_for_responses (length (ActiveClients), {dict: new (), []}),
-            report: counting (File_name, FirstLine, LastLine, Clients, Timing)
-    end.
+count (FileName, FirstLine, LastLine, Clients) ->
+    Ranges = chunk: ranges (FirstLine, LastLine, length (Clients)),
+    L = lists: zip (Ranges, Clients),
+    [ request_client (FileName,First,Last,Client) || {{First,Last},Client} <- L],
+    {_Result, Timing} = listen_for_responses (length (Clients), {dict: new (), []}),
+    report: counting (FileName, FirstLine, LastLine, Clients, Timing).
+    
 
-
-send_portions_to_clients (FileName, FirstLineNode, Portion, LastLine, [Client|Clients]) ->
-    LastLineNode = FirstLineNode + Portion,
-    send_portion_to_client (FileName, FirstLineNode, LastLineNode, Client),
-    send_portions_to_clients (FileName, LastLineNode, Portion, LastLine, Clients);    
-send_portions_to_clients (FileName, FirstLineNode, _, LastLine, Client) ->
-    send_portion_to_client (FileName, FirstLineNode, LastLine, Client).
-
-send_portion_to_client (FileName, FirstLineNode, LastLineNode, Client) ->
+request_client (FileName, First, Last, Client) ->
     Sender = {?WORDCOUNT_SERVER, node ()},
-    {?WORDCOUNT_LISTENER, list_to_atom(Client)} ! {wc, Sender, FileName, FirstLineNode, LastLineNode}.
-
-
-
+    {?WORDCOUNT_LISTENER, list_to_atom(Client)} ! {wc, Sender, FileName, First, Last}.
+    
+    
 listen_for_responses (0, Responses) ->
     Responses;
 listen_for_responses (N, {WordCounts, Times}) ->
